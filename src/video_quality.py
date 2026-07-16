@@ -15,10 +15,10 @@ Per-frame metrics (all cheap, all classical CV — no model needed):
   freeze    — near-zero diff from previous frame = duplicated/frozen frame
               (video-side dropout, the twin of audit.py's frozen_runs)
 
-Design choice worth defending: the blur threshold is RELATIVE to the
+Design choice: the blur threshold is RELATIVE to the
 episode's own median, not absolute. Laplacian variance depends on scene
-texture — a plain table scores "blurrier" than a cluttered one at the same
-sharpness. And we stay conservative on purpose: blur during fast motion is
+texture; a plain table scores "blurrier" than a cluttered one at the same
+sharpness. And we stay conservative on purpose because blur during fast motion is
 real signal, and filtering it hard would bias the dataset toward slow demos.
 
 Run standalone: python -m src.video_quality data_raw/svla_so100_pickplace wrist
