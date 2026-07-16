@@ -1,6 +1,6 @@
-# OpenArm 2.0 — Egocentric Data & Teleoperation Pipeline
+# OpenArm 2.0: Egocentric Data & Teleoperation Pipeline by Stuti Patel 
 
-Take-home submission. Tasks completed: **1, 2, 3, 4, and 5 (bonus, VLA)**, where Tasks 1 and 3 have working code against real LeRobot datasets, and Tasks 2/4/5 are design docs.
+Take-home submission. Tasks completed: **1, 2, 3, 4, and 5 (bonus, VLA)**, where Tasks 1 and 3 have working code against LeRobot datasets, and Tasks 2/4/5 are design docs.
 
 | task | where | what |
 |---|---|---|
