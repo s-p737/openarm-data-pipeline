@@ -15,8 +15,8 @@ Take-home submission. Tasks completed: **1, 2, 3, 4, and 5 (bonus, VLA)**, where
 Two public LeRobot datasets, chosen so both modalities are actually exercised:
 
 - **`lerobot/aloha_sim_insertion_human`**: the dataset named in the prompt.
-  50 sim episodes, 14 joints, 50 fps, one top camera. It has **no wrist
-  camera**, so for the egocentric half I added:
+  50 sim episodes, 14 joints, 50 fps, one top camera. It has no wrist
+  camera, so for the egocentric half I added:
 - **`lerobot/svla_so100_pickplace`**: 50 SO100 episodes, 30 fps,
   **top + wrist cameras**. Real hardware also means real defects (quantized
   encoders, operator pauses), which made the audit findings much less
@@ -96,25 +96,26 @@ Teleop and egocentric video fail you in almost opposite ways, and that differenc
 
 ## What I'd do next (more time / hardware access)
 
-1. **Task-space checks** — audit end-effector paths via forward kinematics,
-   not just joint space; catches near-collision and workspace-exit defects
-   that per-joint checks can't see.
-2. **Occlusion detection on the wrist cam** — gripper-occupancy segmentation;
-   blur and exposure are solved cheaply, occlusion is the remaining
-   quality axis and it matters most exactly at grasp time.
-3. **Close the loop** — the Task 4 egocentric success detector, trained on
-   Task 2 labels, auto-scoring incoming episodes so curation happens at
-   collection time instead of after.
-4. **On real hardware**: bus-level comms logging (the only way to tell sensor
-   dropout from operator pauses) and camera-to-joint clock calibration —
-   this pipeline *trusts* LeRobot's timestamps; a collection rig has to *earn*
-   them.
-
+1. **Task-space checks.** Right now everything is validated per joint. Running
+   forward kinematics to audit the actual end-effector path would catch
+   near-collisions and workspace exits that are invisible in joint space.
+2. **Occlusion detection on the wrist cam.** Blur and exposure are cheap solved
+   problems. The remaining quality axis is whether the gripper is blocking the
+   view, and it matters most right at grasp time, so a gripper-occupancy
+   segmentation check is the obvious next filter.
+3. **Close the loop.** Train the Task 4 egocentric success detector on the
+   Task 2 labels and run it on incoming episodes, so bad data gets flagged
+   during collection rather than weeks later in curation.
+4. **On real hardware:** bus-level comms logging, since that's the only reliable
+   way to distinguish sensor dropout from an operator pausing, plus
+   camera-to-joint clock calibration. This pipeline trusts LeRobot's
+   timestamps. A real collection rig has to earn them.
+   
 ## Assumptions
 
 - Success/task labels don't exist in these datasets, so curation is purely
   quality-based; with labels, outcome-aware filtering comes first.
-- Curated output stays in parquet + source-video references rather than a
+- Curated output stays in parquet + source-video references instead of a
   re-packaged LeRobot dataset (faster to iterate; conversion is mechanical).
 - Wrist cam ≈ egocentric. True for OpenArm's setup as described; a head-mounted
   rig would add gaze/parallax questions this design doesn't cover.
