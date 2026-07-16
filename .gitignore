@@ -5,7 +5,3 @@ out/
 __pycache__/
 .ipynb_checkpoints/
 .DS_Store
-
-# interview prep notes — mine, not part of the submission
-INTERVIEW_PREP.md
-STUDY_GUIDE.md
