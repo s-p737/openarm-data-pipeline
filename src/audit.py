@@ -13,7 +13,7 @@ The checks:
   4. timestamp_gaps    — recording glitches (dt far from 1/fps)
   5. episode profile   — length, per-joint range (for the length histogram etc.)
 
-Design choice worth defending: thresholds are ROBUST + RELATIVE, not absolute.
+Design choice: thresholds are ROBUST + RELATIVE, not absolute.
 aloha joints are in radians (~±1), svla in degrees (~0–180) — any fixed
 threshold breaks on one of them. So jumps are flagged against the dataset's
 own delta distribution (median + MAD), which is unit-agnostic for free.
