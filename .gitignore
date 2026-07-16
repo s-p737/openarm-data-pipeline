@@ -1,0 +1,10 @@
+# local data + outputs — repo stays code-only, quickstart re-downloads
+data_raw/
+out/
+.venv/
+__pycache__/
+.ipynb_checkpoints/
+.DS_Store
+
+# interview prep notes — mine, not part of the submission
+INTERVIEW_PREP.md

@@ -1,0 +1,13 @@
+# data pipeline core
+huggingface_hub
+pandas
+pyarrow
+numpy
+scipy
+opencv-python
+matplotlib
+
+# notebook execution
+jupyter
+nbconvert
+ipykernel
