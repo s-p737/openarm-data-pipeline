@@ -71,7 +71,7 @@ defects (blur, clipping) are recorded as masks for the training dataloader to
 skip, and only episode-level defects cause deletions. Videos are never
 re-encoded; curated data points back into the source mp4s via timestamps.
 
-**Thresholds are not absolute and are physical/robust** The two datasets disagree
+**Thresholds are not absolute — they're physical/robust.** The two datasets disagree
 about everything absolute (radians vs degrees, float-jitter vs 12-bit
 quantized encoders, 50 vs 30 fps). Jump detection uses MAD + a physical floor
 ("no joint sweeps its full range in <0.25 s"); blur thresholds are relative to
