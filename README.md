@@ -1,8 +1,6 @@
 # OpenArm 2.0 — Egocentric Data & Teleoperation Pipeline
 
-Take-home submission. Tasks completed: **1, 2, 3, 4, and 5 (bonus, VLA)** —
-Tasks 1 and 3 as working code against real LeRobot datasets, Tasks 2/4/5 as
-design docs.
+Take-home submission. Tasks completed: **1, 2, 3, 4, and 5 (bonus, VLA)**, where Tasks 1 and 3 have working code against real LeRobot datasets, and Tasks 2/4/5 are design docs.
 
 | task | where | what |
 |---|---|---|
@@ -16,10 +14,10 @@ design docs.
 
 Two public LeRobot datasets, chosen so both modalities are actually exercised:
 
-- **`lerobot/aloha_sim_insertion_human`** — the dataset named in the prompt.
+- **`lerobot/aloha_sim_insertion_human`**: the dataset named in the prompt.
   50 sim episodes, 14 joints, 50 fps, one top camera. It has **no wrist
   camera**, so for the egocentric half I added:
-- **`lerobot/svla_so100_pickplace`** — 50 real SO100 episodes, 30 fps,
+- **`lerobot/svla_so100_pickplace`**: 50 SO100 episodes, 30 fps,
   **top + wrist cameras**. Real hardware also means real defects (quantized
   encoders, operator pauses), which made the audit findings much less
   hypothetical.
@@ -63,49 +61,38 @@ data_raw/ (LeRobot v3.0)                       out/
 **No `lerobot` dependency.** The library drags in torch + a training stack; a
 data pipeline needs none of it. `src/load.py` reads the v3.0 format directly
 (parquet + concatenated mp4 + json metadata) in ~100 lines, verified against
-the real files. Fewer deps, and it forced me to actually understand the format.
+the real files. Fewer deps, and it forced me to learn and understand the formatting myself.
 
-**Audit checks are pure functions, used twice.** The notebook explores with
-exactly the code the pipeline filters with — the analysis can't drift from
-the production behavior.
+**Audit checks are pure functions, used twice.** The notebook explores with the code the pipeline filters with, ensuring that the analysis can't drift from the production behavior.
 
-**Episodes get dropped; frames get masked.** Deleting individual video frames
+**Episodes get dropped + frames get masked.** Deleting individual video frames
 breaks the 1:1 temporal alignment with the joint stream, so frame-level
 defects (blur, clipping) are recorded as masks for the training dataloader to
 skip, and only episode-level defects cause deletions. Videos are never
-re-encoded — curated data points back into the source mp4s via timestamps.
+re-encoded; curated data points back into the source mp4s via timestamps.
 
-**Thresholds are physical/robust, not absolute.** The two datasets disagree
+**Thresholds are not absolute and are physical/robust** The two datasets disagree
 about everything absolute (radians vs degrees, float-jitter vs 12-bit
 quantized encoders, 50 vs 30 fps). Jump detection uses MAD + a physical floor
 ("no joint sweeps its full range in <0.25 s"); blur thresholds are relative to
-each stream's own median. Both of these were bugs first: v1 of the jump check
+each stream's own median. Both of these were bugs at first as v1 of the jump check
 flagged 500 false positives per episode, and v1 of the stall check flagged
 every svla episode because quantized encoders legitimately repeat values. The
 notebook documents both iterations.
 
-**Deterministic and reproducible.** Same input → byte-identical parquet
-(verified by hash). The report embeds its config, so any curated set can
-answer "what settings produced you?"
+**Deterministic and reproducible.** Identical inputs produce byte-identical parquet outputs (verified by hash). Each report embeds the config that generated it, so any curated set can be traced back to its exact settings.
 
-### What the audits actually found
+### What the audits found
 
 - **aloha**: 8/50 episodes contain single-frame teleports (one joint moves an
   implausible amount in 20 ms) → dropped. Zero NaNs / timing gaps.
 - **svla**: median episode is ~19% fully-stalled (operator pauses — 
   indistinguishable from bus dropout using positions alone); 4 episodes exceed
-  30% dead time → dropped. Wrist-cam blur is ~10× worse than the top cam and
+  30% dead time (dropped). Wrist-cam blur is ~10× worse than the top cam and
   bursts during fast reaches (up to 9% of frames) → masked, episodes kept.
 
 ## Teleop vs egocentric: the key trade-offs
-
-| | joint states | egocentric video |
-|---|---|---|
-| defect definition | physically impossible | perceptually useless |
-| thresholds | physical limits + robust stats | relative to the stream's own stats |
-| filter granularity | episode drops | frame masks (episode drop only >20% bad) |
-| aggressiveness | strict — bad state is *wrong* | conservative — blurry frame is still *informative* |
-| the trap | unit/encoder assumptions | filtering blur selects for slow demos and biases the policy slow |
+Teleop and egocentric video fail you in almost opposite ways, and that difference shapes a lot of things downstream. With joint states, a defect is something that is physically impossible, like a joint value outside its actual limits, a jump no actuator could have made. That means you can ground your thresholds in physical limits and statistics, and you can afford to be strict about it, because a bad state is just wrong. Egocentric video doesn't give you that certainty. A blurry or occluded frame is perceptually useless without being physically impossible, so your thresholds only make sense relative to the statistics of that particular stream rather than any fixed standard. This difference in what even counts as a defect changes how you're allowed to filter. A bad joint state usually means dropping the whole episode, while a bad frame calls for a mask, and you only escalate to dropping the episode once more than about 20% of it is bad. It also changes how aggressive you can be. Joint states can be handled strictly, since a wrong value is unambiguously wrong. Video has to be handled conservatively, since even a blurry frame is still carrying information you don't want to throw away. And each modality has a trap; for joint states, it's the unit and encoder assumptions that corrupt your thresholds without you noticing. For video, it's that filtering out blur ends up selecting for slow demonstrations, so the policy you train on that data learns to be slow too.
 
 ## What I'd do next (more time / hardware access)
 
